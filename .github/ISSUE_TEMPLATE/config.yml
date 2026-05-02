@@ -1,0 +1,10 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: Questions or setup help
+    url: https://github.com/pauldenni/quickedit/discussions
+    about: Ask general questions, share setup issues, or discuss usage ideas.
+
+  - name: Obsidian help
+    url: https://help.obsidian.md/
+    about: For general Obsidian questions not specific to QuickEdit.
