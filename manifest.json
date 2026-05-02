@@ -1,0 +1,9 @@
+{
+  "id": "quickedit",
+  "name": "QuickEdit",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Double-click to enter edit mode and press Escape to return to reading mode.",
+  "author": "Paul Denni",
+  "isDesktopOnly": false
+}
