@@ -6,6 +6,23 @@ This project follows semantic versioning.
 
 ---
 
+## [0.2.2] - 2026-05-02
+
+### Fixed
+- Resolved issue where checkbox behavior was incorrectly overridden by broader interactive element handling
+- Improved consistency of double-click behavior across different UI elements
+
+### Changed
+- Removed "Ignore links" and "Ignore checkboxes" settings
+- Links and checkboxes are now always protected to preserve native Obsidian behavior
+
+### Improved
+- Simplified settings panel by removing low-impact configuration options
+- Clarified interaction model to better align with user expectations
+- Improved internal handling of interactive elements to avoid unintended overrides
+
+---
+
 ## [0.2.1] - 2026-05-02
 
 ### Added
