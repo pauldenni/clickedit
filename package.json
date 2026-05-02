@@ -1,6 +1,6 @@
 {
   "name": "quickedit",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "Quickly enter edit mode in Obsidian with a double-click and return with Escape",
   "author": "Paul Denni",

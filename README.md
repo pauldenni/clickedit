@@ -34,8 +34,8 @@ QuickEdit includes settings for:
 - Double-click to edit
 - Escape to Reading mode
 - Edit mode preference: Live Preview or Source mode
-- Ignore links
-- Ignore checkboxes
+- Links and checkboxes are protected by default so Obsidian’s normal behavior is preserved
+- Optional safeguards for code blocks and interactive elements
 - Ignore code blocks
 - Ignore interactive elements
 

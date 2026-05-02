@@ -29,8 +29,6 @@ var DEFAULT_SETTINGS = {
   doubleClickToEdit: true,
   escapeToReading: true,
   editMode: "live-preview",
-  ignoreLinks: true,
-  ignoreCheckboxes: true,
   ignoreCodeBlocks: true,
   ignoreInteractiveElements: true
 };
@@ -65,6 +63,10 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
     );
     this.attachToMarkdownLeaves();
   }
+  /**
+   * Attaches QuickEdit event handlers to Markdown leaves.
+   * Uses a dataset flag to prevent duplicate listeners on the same container.
+   */
   attachToMarkdownLeaves() {
     this.app.workspace.iterateAllLeaves((leaf) => {
       const view = leaf.view;
@@ -120,18 +122,21 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
     const viewState = leaf.getViewState();
     return ((_a = viewState.state) == null ? void 0 : _a.mode) === "source";
   }
+  /**
+   * Determines whether QuickEdit should ignore a double-click.
+   *
+   * Links and checkboxes are always protected because they already have
+   * expected Obsidian behavior. Code blocks and other interactive elements
+   * remain configurable.
+   */
   shouldIgnoreDoubleClick(event) {
     const target = event.target;
     if (!target) return false;
-    if (this.settings.ignoreLinks) {
-      if (target.closest("a") || target.closest(".internal-link") || target.closest(".external-link") || target.closest(".cm-hmd-internal-link") || target.closest(".cm-link")) {
-        return true;
-      }
+    if (target.closest("a") || target.closest(".internal-link") || target.closest(".external-link") || target.closest(".cm-hmd-internal-link") || target.closest(".cm-link")) {
+      return true;
     }
-    if (this.settings.ignoreCheckboxes) {
-      if (target.closest("input[type='checkbox']")) {
-        return true;
-      }
+    if (target.closest("input[type='checkbox']")) {
+      return true;
     }
     if (this.settings.ignoreCodeBlocks) {
       if (target.closest("pre") || target.closest("code") || target.closest(".markdown-rendered pre") || target.closest(".markdown-rendered code")) {
@@ -139,12 +144,20 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
       }
     }
     if (this.settings.ignoreInteractiveElements) {
-      if (target.closest("button") || target.closest("input") || target.closest("select") || target.closest("textarea") || target.closest(".collapse-indicator") || target.closest(".callout-fold") || target.closest(".tree-item-icon")) {
+      const input = target.closest("input");
+      if (input && input.getAttribute("type") !== "checkbox") {
+        return true;
+      }
+      if (target.closest("button") || target.closest("select") || target.closest("textarea") || target.closest(".collapse-indicator") || target.closest(".callout-fold") || target.closest(".tree-item-icon")) {
         return true;
       }
     }
     return false;
   }
+  /**
+   * Enters edit mode without cursor positioning.
+   * Used by command palette actions.
+   */
   async enterEditMode(leaf) {
     const viewState = leaf.getViewState();
     if (!viewState.state) viewState.state = {};
@@ -157,6 +170,11 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
       view.editor.focus();
     });
   }
+  /**
+   * Enters edit mode and attempts to place the cursor near the click location.
+   * Cursor placement is best-effort because rendered Markdown does not always
+   * map perfectly to editor positions.
+   */
   async enterEditModeAtClick(leaf, event) {
     const clickEvent = event;
     const viewState = leaf.getViewState();
@@ -199,13 +217,13 @@ var QuickEditSettingTab = class extends import_obsidian.PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
     containerEl.createEl("h2", { text: "QuickEdit settings" });
-    new import_obsidian.Setting(containerEl).setName("Double-click to edit").setDesc("Double-click a note in reading mode to enter edit mode.").addToggle(
+    new import_obsidian.Setting(containerEl).setName("Double-click to edit").setDesc("Double-click a note in Reading mode to enter edit mode.").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.doubleClickToEdit).onChange(async (value) => {
         this.plugin.settings.doubleClickToEdit = value;
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("Escape to reading mode").setDesc("Press Escape while editing to return to reading mode.").addToggle(
+    new import_obsidian.Setting(containerEl).setName("Escape to Reading mode").setDesc("Press Escape while editing to return to Reading mode.").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.escapeToReading).onChange(async (value) => {
         this.plugin.settings.escapeToReading = value;
         await this.plugin.saveSettings();
@@ -214,18 +232,6 @@ var QuickEditSettingTab = class extends import_obsidian.PluginSettingTab {
     new import_obsidian.Setting(containerEl).setName("Edit mode").setDesc("Choose whether QuickEdit opens notes in Live Preview or Source mode.").addDropdown(
       (dropdown) => dropdown.addOption("live-preview", "Live Preview").addOption("source", "Source mode").setValue(this.plugin.settings.editMode).onChange(async (value) => {
         this.plugin.settings.editMode = value;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName("Ignore links").setDesc("Do not enter edit mode when double-clicking internal or external links.").addToggle(
-      (toggle) => toggle.setValue(this.plugin.settings.ignoreLinks).onChange(async (value) => {
-        this.plugin.settings.ignoreLinks = value;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName("Ignore checkboxes").setDesc("Do not enter edit mode when double-clicking directly on a checkbox.").addToggle(
-      (toggle) => toggle.setValue(this.plugin.settings.ignoreCheckboxes).onChange(async (value) => {
-        this.plugin.settings.ignoreCheckboxes = value;
         await this.plugin.saveSettings();
       })
     );
