@@ -21,6 +21,11 @@ What you expected to happen.
 ## Actual behavior
 What actually happened.
 
+## Reproducibility
+- [ ] Always
+- [ ] Sometimes
+- [ ] Rarely
+
 ## Environment
 - Obsidian version:
 - Plugin version:
@@ -28,3 +33,4 @@ What actually happened.
 
 ## Additional context
 Add any other context or screenshots here.
+
