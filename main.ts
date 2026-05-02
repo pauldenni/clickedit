@@ -7,6 +7,13 @@ import {
   WorkspaceLeaf,
 } from "obsidian";
 
+/**
+ * User-configurable options for QuickEdit.
+ *
+ * These settings are intentionally small and behavior-focused so the plugin
+ * remains predictable: enter edit mode quickly, avoid accidental activation,
+ * and return to reading mode when requested.
+ */
 interface QuickEditSettings {
   doubleClickToEdit: boolean;
   escapeToReading: boolean;
@@ -27,6 +34,20 @@ const DEFAULT_SETTINGS: QuickEditSettings = {
   ignoreInteractiveElements: true,
 };
 
+/**
+ * QuickEdit
+ *
+ * QuickEdit makes it easier to move between Obsidian's Reading mode and edit
+ * mode without reaching for the mode toggle in the note header.
+ *
+ * Core behavior:
+ * - Double-click inside a Markdown note in Reading mode to start editing.
+ * - Press Escape while editing to return to Reading mode.
+ * - Preserve normal editing behavior by ignoring double-clicks while already
+ *   in edit mode.
+ * - Avoid interfering with common interactive elements such as links,
+ *   checkboxes, code blocks, buttons, and inputs.
+ */
 export default class QuickEditPlugin extends Plugin {
   settings: QuickEditSettings;
 
@@ -35,6 +56,8 @@ export default class QuickEditPlugin extends Plugin {
 
     this.addSettingTab(new QuickEditSettingTab(this.app, this));
 
+    // Command palette support gives users keyboard-driven access to the same
+    // mode-switching behavior, even if they disable mouse interactions.
     this.addCommand({
       id: "enter-edit-mode",
       name: "Enter edit mode",
@@ -53,6 +76,9 @@ export default class QuickEditPlugin extends Plugin {
       callback: () => this.toggleModeForActiveLeaf(),
     });
 
+    // Leaves can be created, split, moved, or activated after plugin load.
+    // Re-scan when the workspace layout changes so newly available Markdown
+    // views receive QuickEdit's event handlers.
     this.registerEvent(
       this.app.workspace.on("layout-change", () => this.attachToMarkdownLeaves())
     );
@@ -64,6 +90,13 @@ export default class QuickEditPlugin extends Plugin {
     this.attachToMarkdownLeaves();
   }
 
+  /**
+   * Attach event handlers to every open Markdown leaf.
+   *
+   * Obsidian leaves do not all exist at plugin load time, so this method may run
+   * repeatedly. The dataset flag prevents duplicate handlers from being attached
+   * to the same container.
+   */
   private attachToMarkdownLeaves() {
     this.app.workspace.iterateAllLeaves((leaf) => {
       const view = leaf.view;
@@ -76,7 +109,11 @@ export default class QuickEditPlugin extends Plugin {
 
       this.registerDomEvent(container, "dblclick", (event: MouseEvent) => {
         if (!this.settings.doubleClickToEdit) return;
+
+        // Only activate from Reading mode. This preserves native editor behavior
+        // such as double-clicking to select a word while already editing.
         if (!this.isReadingMode(leaf)) return;
+
         if (this.shouldIgnoreDoubleClick(event)) return;
 
         this.enterEditModeAtClick(leaf, event);
@@ -92,6 +129,10 @@ export default class QuickEditPlugin extends Plugin {
     });
   }
 
+  /**
+   * Return the active leaf only when it is a Markdown note.
+   * Command palette actions should be no-ops in non-Markdown views.
+   */
   private getActiveMarkdownLeaf(): WorkspaceLeaf | null {
     const leaf = this.app.workspace.activeLeaf;
     if (!leaf || !(leaf.view instanceof MarkdownView)) return null;
@@ -133,6 +174,14 @@ export default class QuickEditPlugin extends Plugin {
     return viewState.state?.mode === "source";
   }
 
+  /**
+   * Decide whether a double-click should be ignored.
+   *
+   * This protects normal Obsidian interactions. For example, double-clicking a
+   * link should open/select the link behavior rather than unexpectedly switching
+   * modes. Checkbox handling is intentionally narrow: only the checkbox itself is
+   * ignored, so double-clicking nearby task text can still enter edit mode.
+   */
   private shouldIgnoreDoubleClick(event: MouseEvent): boolean {
     const target = event.target as HTMLElement | null;
     if (!target) return false;
@@ -183,11 +232,20 @@ export default class QuickEditPlugin extends Plugin {
     return false;
   }
 
+  /**
+   * Enter edit mode and focus the editor.
+   *
+   * This is used by command palette actions where there is no mouse event and
+   * therefore no click location to map back into the editor.
+   */
   private async enterEditMode(leaf: WorkspaceLeaf) {
     const viewState = leaf.getViewState();
     if (!viewState.state) viewState.state = {};
 
     viewState.state.mode = "source";
+
+    // Obsidian represents both Live Preview and Source mode as "source" mode.
+    // The boolean source flag chooses between them.
     viewState.state.source = this.settings.editMode === "source";
 
     await leaf.setViewState(viewState);
@@ -199,6 +257,13 @@ export default class QuickEditPlugin extends Plugin {
     });
   }
 
+  /**
+   * Enter edit mode and attempt to place the cursor where the user clicked.
+   *
+   * Cursor placement is best-effort because Reading mode renders Markdown as
+   * HTML, and not every rendered element maps perfectly back to a source
+   * position. If mapping fails, QuickEdit simply focuses the editor.
+   */
   private async enterEditModeAtClick(leaf: WorkspaceLeaf, event: MouseEvent) {
     const clickEvent = event;
 
@@ -206,10 +271,15 @@ export default class QuickEditPlugin extends Plugin {
     if (!viewState.state) viewState.state = {};
 
     viewState.state.mode = "source";
+
+    // Obsidian represents both Live Preview and Source mode as "source" mode.
+    // The boolean source flag chooses between them.
     viewState.state.source = this.settings.editMode === "source";
 
     await leaf.setViewState(viewState);
 
+    // Wait until the editor is mounted after switching modes before attempting
+    // to focus it or place the cursor.
     requestAnimationFrame(() => {
       const view = leaf.view;
       if (!(view instanceof MarkdownView)) return;
@@ -244,6 +314,12 @@ export default class QuickEditPlugin extends Plugin {
   }
 }
 
+/**
+ * Settings UI for QuickEdit.
+ *
+ * The settings are intentionally plain and map directly to runtime behavior so
+ * users can understand what each option changes without reading documentation.
+ */
 class QuickEditSettingTab extends PluginSettingTab {
   plugin: QuickEditPlugin;
 
