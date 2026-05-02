@@ -74,6 +74,25 @@ Run in development/watch mode:
 npm run dev
 ```
 
+---
+
+## Release checklist
+
+Before creating a new release:
+
+- [ ] Update version in `manifest.json`
+- [ ] Update version in `package.json`
+- [ ] Update `versions.json`
+- [ ] Run `npm run build`
+- [ ] Verify `main.js` is up to date
+- [ ] Commit changes
+- [ ] Create git tag (e.g. `git tag 0.2.1`)
+- [ ] Push tag (`git push origin 0.2.1`)
+- [ ] Create GitHub release with:
+  - `main.js`
+  - `manifest.json`
+- [ ] Test install from release in a fresh vault
+
 ## Known limitations
 
 Cursor placement is best-effort. Obsidian needs to switch from Reading mode into the editor, and some rendered elements may not map perfectly back to an exact editor position.
