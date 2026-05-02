@@ -15,11 +15,9 @@ Double-click a note in Reading mode to start editing. Press Escape to return to 
 
 ## Screenshots
 
-```md
-![QuickEdit in Reading mode](assets/quickedit.gif)
+[QuickEdit in Reading mode](assets/quickedit.gif)
 
-![QuickEdit settings](assets/quickedit-settings.png)
-```
+[QuickEdit settings](assets/quickedit-settings.png)
 
 ## Usage
 
