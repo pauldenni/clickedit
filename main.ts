@@ -30,7 +30,7 @@ const DEFAULT_SETTINGS: QuickEditSettings = {
 };
 
 export default class QuickEditPlugin extends Plugin {
-  settings: QuickEditSettings;
+  settings: QuickEditSettings = DEFAULT_SETTINGS;
 
   async onload() {
     await this.loadSettings();
@@ -243,7 +243,10 @@ export default class QuickEditPlugin extends Plugin {
       editor.focus();
 
       try {
-        const position = editor.posAtMouse(clickEvent);
+        const cmEditor = (editor as any).cm;
+        const position =
+          cmEditor?.posAtCoords?.({left: clickEvent.clientX, top: clickEvent.clientY}) ??
+          cmEditor?.coordsChar?.({left: clickEvent.clientX, top: clickEvent.clientY});
         if (position) editor.setCursor(position);
       } catch {
         // Cursor placement is best-effort.
@@ -315,8 +318,8 @@ class QuickEditSettingTab extends PluginSettingTab {
           .addOption("live-preview", "Live Preview")
           .addOption("source", "Source mode")
           .setValue(this.plugin.settings.editMode)
-          .onChange(async (value: "live-preview" | "source") => {
-            this.plugin.settings.editMode = value;
+          .onChange(async (value) => {
+            this.plugin.settings.editMode = value as "live-preview" | "source";
             await this.plugin.saveSettings();
           })
       );

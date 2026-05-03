@@ -35,7 +35,7 @@ var DEFAULT_SETTINGS = {
 var QuickEditPlugin = class extends import_obsidian.Plugin {
   constructor() {
     super(...arguments);
-    __publicField(this, "settings");
+    __publicField(this, "settings", DEFAULT_SETTINGS);
   }
   async onload() {
     await this.loadSettings();
@@ -183,12 +183,14 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
     viewState.state.source = this.settings.editMode === "source";
     await leaf.setViewState(viewState);
     requestAnimationFrame(() => {
+      var _a, _b, _c;
       const view = leaf.view;
       if (!(view instanceof import_obsidian.MarkdownView)) return;
       const editor = view.editor;
       editor.focus();
       try {
-        const position = editor.posAtMouse(clickEvent);
+        const cmEditor = editor.cm;
+        const position = (_c = (_a = cmEditor == null ? void 0 : cmEditor.posAtCoords) == null ? void 0 : _a.call(cmEditor, { left: clickEvent.clientX, top: clickEvent.clientY })) != null ? _c : (_b = cmEditor == null ? void 0 : cmEditor.coordsChar) == null ? void 0 : _b.call(cmEditor, { left: clickEvent.clientX, top: clickEvent.clientY });
         if (position) editor.setCursor(position);
       } catch (e) {
       }
