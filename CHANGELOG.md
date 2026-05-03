@@ -6,6 +6,21 @@ This project follows semantic versioning.
 
 ---
 
+## [1.0.0] - 2026-05-02
+
+### Added
+- Improved cursor placement using text anchoring and data-line mapping
+- Scroll recovery after entering edit mode for smoother transitions
+
+### Changed
+- Simplified settings by removing low-impact options
+- Improved consistency and predictability of double-click behavior
+
+### Notes
+- Cursor placement is best-effort due to differences between Reading and Edit modes
+
+---
+
 ## [0.2.2] - 2026-05-02
 
 ### Fixed

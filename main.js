@@ -171,30 +171,104 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
     });
   }
   /**
-   * Enters edit mode and attempts to place the cursor near the click location.
-   * Cursor placement is best-effort because rendered Markdown does not always
-   * map perfectly to editor positions.
+   * Enters edit mode and attempts to place the cursor near the clicked content.
+   *
+   * Instead of reusing mouse coordinates after the view changes, QuickEdit first
+   * captures a text anchor from Reading mode, then searches for that text in the
+   * editor after switching modes. This is more reliable because rendered
+   * Markdown and editor coordinates do not always map cleanly to each other.
    */
   async enterEditModeAtClick(leaf, event) {
-    const clickEvent = event;
+    const anchor = this.getTextAnchorFromClick(event);
     const viewState = leaf.getViewState();
     if (!viewState.state) viewState.state = {};
     viewState.state.mode = "source";
     viewState.state.source = this.settings.editMode === "source";
     await leaf.setViewState(viewState);
     requestAnimationFrame(() => {
-      var _a, _b, _c;
       const view = leaf.view;
       if (!(view instanceof import_obsidian.MarkdownView)) return;
       const editor = view.editor;
       editor.focus();
-      try {
-        const cmEditor = editor.cm;
-        const position = (_c = (_a = cmEditor == null ? void 0 : cmEditor.posAtCoords) == null ? void 0 : _a.call(cmEditor, { left: clickEvent.clientX, top: clickEvent.clientY })) != null ? _c : (_b = cmEditor == null ? void 0 : cmEditor.coordsChar) == null ? void 0 : _b.call(cmEditor, { left: clickEvent.clientX, top: clickEvent.clientY });
-        if (position) editor.setCursor(position);
-      } catch (e) {
+      const position = this.findAnchorPosition(editor, anchor);
+      if (position) {
+        editor.setCursor(position);
+        try {
+          editor.scrollIntoView(
+            {
+              from: position,
+              to: position
+            },
+            true
+          );
+        } catch (e) {
+        }
       }
     });
+  }
+  /**
+   * Captures the best available anchor before switching from Reading mode to edit mode.
+   *
+   * Obsidian often includes `data-line` attributes in rendered preview content.
+   * When available, that line number is more reliable than matching text after
+   * the rendered DOM is replaced by the editor. Text anchors remain as fallback.
+   */
+  getTextAnchorFromClick(event) {
+    var _a, _b, _c, _d, _e, _f;
+    const target = event.target;
+    const selectedText = (_b = (_a = window.getSelection()) == null ? void 0 : _a.toString().trim()) != null ? _b : "";
+    const block = target == null ? void 0 : target.closest(
+      "[data-line], p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th"
+    );
+    const dataLineElement = target == null ? void 0 : target.closest("[data-line]");
+    const rawLine = dataLineElement == null ? void 0 : dataLineElement.getAttribute("data-line");
+    const parsedLine = rawLine !== null && rawLine !== void 0 ? Number(rawLine) : null;
+    const blockText = (_f = (_e = (_c = block == null ? void 0 : block.textContent) == null ? void 0 : _c.trim()) != null ? _e : (_d = target == null ? void 0 : target.textContent) == null ? void 0 : _d.trim()) != null ? _f : "";
+    return {
+      line: parsedLine !== null && Number.isFinite(parsedLine) ? parsedLine : null,
+      blockText: this.normalizeText(blockText),
+      selectedText: this.normalizeText(selectedText)
+    };
+  }
+  /**
+   * Finds the editor position that best matches the captured anchor.
+   *
+   * Preferred path: use Obsidian's rendered `data-line` value and place the
+   * cursor on that source line, near the selected word when available.
+   * Fallback path: search for the selected text or surrounding block text.
+   */
+  findAnchorPosition(editor, anchor) {
+    const selectedText = anchor.selectedText.toLowerCase();
+    if (anchor.line !== null) {
+      const line = Math.min(Math.max(anchor.line, 0), editor.lineCount() - 1);
+      const rawLine = editor.getLine(line);
+      if (selectedText.length > 0) {
+        const ch = rawLine.toLowerCase().indexOf(selectedText);
+        return { line, ch: ch >= 0 ? ch : 0 };
+      }
+      return { line, ch: 0 };
+    }
+    if (!anchor.blockText && !anchor.selectedText) return null;
+    const blockText = anchor.blockText.toLowerCase();
+    const blockSnippet = blockText.slice(0, 80);
+    for (let line = 0; line < editor.lineCount(); line++) {
+      const rawLine = editor.getLine(line);
+      const normalizedLine = this.normalizeText(rawLine).toLowerCase();
+      if (!normalizedLine) continue;
+      const selectedMatch = selectedText.length > 0 && normalizedLine.includes(selectedText);
+      const blockMatch = blockText.length > 0 && (blockText.includes(normalizedLine) || normalizedLine.includes(blockSnippet));
+      if (selectedMatch) {
+        const ch = rawLine.toLowerCase().indexOf(selectedText);
+        return { line, ch: Math.max(ch, 0) };
+      }
+      if (blockMatch) {
+        return { line, ch: 0 };
+      }
+    }
+    return null;
+  }
+  normalizeText(text) {
+    return text.replace(/\s+/g, " ").trim();
   }
   async enterReadingMode(leaf) {
     const viewState = leaf.getViewState();
