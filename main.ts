@@ -11,10 +11,12 @@ import {
  * QuickEdit Plugin
  *
  * Quickly enter edit mode by double-clicking in Reading mode,
+ * switch to Source mode with a triple-click,
  * and return to Reading mode by pressing Escape.
  */
 interface QuickEditSettings {
   doubleClickToEdit: boolean;
+  tripleClickToSource: boolean;
   escapeToReading: boolean;
   editMode: "live-preview" | "source";
   ignoreCodeBlocks: boolean;
@@ -23,6 +25,7 @@ interface QuickEditSettings {
 
 const DEFAULT_SETTINGS: QuickEditSettings = {
   doubleClickToEdit: true,
+  tripleClickToSource: false,
   escapeToReading: true,
   editMode: "live-preview",
   ignoreCodeBlocks: true,
@@ -80,12 +83,24 @@ export default class QuickEditPlugin extends Plugin {
       if (container.dataset.quickEditAttached === "true") return;
       container.dataset.quickEditAttached = "true";
 
-      this.registerDomEvent(container, "dblclick", (event: MouseEvent) => {
-        if (!this.settings.doubleClickToEdit) return;
-        if (!this.isReadingMode(leaf)) return;
+      let sequenceStartedInReadMode = false;
+
+      this.registerDomEvent(container, "click", (event: MouseEvent) => {
+        if (event.detail === 1) {
+          sequenceStartedInReadMode = this.isReadingMode(leaf);
+        }
+
+        if (!sequenceStartedInReadMode) return;
         if (this.shouldIgnoreDoubleClick(event)) return;
 
-        this.enterEditModeAtClick(leaf, event);
+        if (event.detail === 3 && this.settings.tripleClickToSource) {
+          this.enterEditModeAtClick(leaf, event, true);
+          return;
+        }
+
+        if (event.detail === 2 && this.settings.doubleClickToEdit) {
+          this.enterEditModeAtClick(leaf, event);
+        }
       });
 
       this.registerDomEvent(container, "keydown", (event: KeyboardEvent) => {
@@ -203,12 +218,12 @@ export default class QuickEditPlugin extends Plugin {
    * Enters edit mode without cursor positioning.
    * Used by command palette actions.
    */
-  private async enterEditMode(leaf: WorkspaceLeaf) {
+  private async enterEditMode(leaf: WorkspaceLeaf, forceSource = false) {
     const viewState = leaf.getViewState();
     if (!viewState.state) viewState.state = {};
 
     viewState.state.mode = "source";
-    viewState.state.source = this.settings.editMode === "source";
+    viewState.state.source = forceSource || this.settings.editMode === "source";
 
     await leaf.setViewState(viewState);
 
@@ -227,14 +242,14 @@ export default class QuickEditPlugin extends Plugin {
    * editor after switching modes. This is more reliable because rendered
    * Markdown and editor coordinates do not always map cleanly to each other.
    */
-  private async enterEditModeAtClick(leaf: WorkspaceLeaf, event: MouseEvent) {
+  private async enterEditModeAtClick(leaf: WorkspaceLeaf, event: MouseEvent, forceSource = false) {
     const anchor = this.getTextAnchorFromClick(event);
 
     const viewState = leaf.getViewState();
     if (!viewState.state) viewState.state = {};
 
     viewState.state.mode = "source";
-    viewState.state.source = this.settings.editMode === "source";
+    viewState.state.source = forceSource || this.settings.editMode === "source";
 
     await leaf.setViewState(viewState);
 
@@ -399,6 +414,18 @@ class QuickEditSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.doubleClickToEdit)
           .onChange(async (value) => {
             this.plugin.settings.doubleClickToEdit = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Triple-click to Source mode")
+      .setDesc("Triple-click a note in Reading mode to enter Source mode directly.")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.tripleClickToSource)
+          .onChange(async (value) => {
+            this.plugin.settings.tripleClickToSource = value;
             await this.plugin.saveSettings();
           })
       );

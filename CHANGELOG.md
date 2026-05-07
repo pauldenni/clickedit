@@ -6,6 +6,13 @@ This project follows semantic versioning.
 
 ---
 
+## [1.1.0] - 2026-05-07
+
+### Added
+- Triple-click to Source mode: triple-clicking in Reading mode now enters Source mode directly (disabled by default, toggle in settings)
+
+---
+
 ## [1.0.0] - 2026-05-02
 
 ### Added
@@ -17,7 +24,7 @@ This project follows semantic versioning.
 - Improved consistency and predictability of double-click behavior
 
 ### Notes
-- Cursor placement is best-effort due to differences between Reading and Edit modes
+- Cursor placement is best-effort due to differences between Reading and Edit modesg
 
 ---
 

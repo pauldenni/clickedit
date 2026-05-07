@@ -27,6 +27,7 @@ module.exports = __toCommonJS(main_exports);
 var import_obsidian = require("obsidian");
 var DEFAULT_SETTINGS = {
   doubleClickToEdit: true,
+  tripleClickToSource: false,
   escapeToReading: true,
   editMode: "live-preview",
   ignoreCodeBlocks: true,
@@ -74,11 +75,20 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
       const container = view.containerEl;
       if (container.dataset.quickEditAttached === "true") return;
       container.dataset.quickEditAttached = "true";
-      this.registerDomEvent(container, "dblclick", (event) => {
-        if (!this.settings.doubleClickToEdit) return;
-        if (!this.isReadingMode(leaf)) return;
+      let sequenceStartedInReadMode = false;
+      this.registerDomEvent(container, "click", (event) => {
+        if (event.detail === 1) {
+          sequenceStartedInReadMode = this.isReadingMode(leaf);
+        }
+        if (!sequenceStartedInReadMode) return;
         if (this.shouldIgnoreDoubleClick(event)) return;
-        this.enterEditModeAtClick(leaf, event);
+        if (event.detail === 3 && this.settings.tripleClickToSource) {
+          this.enterEditModeAtClick(leaf, event, true);
+          return;
+        }
+        if (event.detail === 2 && this.settings.doubleClickToEdit) {
+          this.enterEditModeAtClick(leaf, event);
+        }
       });
       this.registerDomEvent(container, "keydown", (event) => {
         if (!this.settings.escapeToReading) return;
@@ -158,11 +168,11 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
    * Enters edit mode without cursor positioning.
    * Used by command palette actions.
    */
-  async enterEditMode(leaf) {
+  async enterEditMode(leaf, forceSource = false) {
     const viewState = leaf.getViewState();
     if (!viewState.state) viewState.state = {};
     viewState.state.mode = "source";
-    viewState.state.source = this.settings.editMode === "source";
+    viewState.state.source = forceSource || this.settings.editMode === "source";
     await leaf.setViewState(viewState);
     requestAnimationFrame(() => {
       const view = leaf.view;
@@ -178,12 +188,12 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
    * editor after switching modes. This is more reliable because rendered
    * Markdown and editor coordinates do not always map cleanly to each other.
    */
-  async enterEditModeAtClick(leaf, event) {
+  async enterEditModeAtClick(leaf, event, forceSource = false) {
     const anchor = this.getTextAnchorFromClick(event);
     const viewState = leaf.getViewState();
     if (!viewState.state) viewState.state = {};
     viewState.state.mode = "source";
-    viewState.state.source = this.settings.editMode === "source";
+    viewState.state.source = forceSource || this.settings.editMode === "source";
     await leaf.setViewState(viewState);
     requestAnimationFrame(() => {
       const view = leaf.view;
@@ -296,6 +306,12 @@ var QuickEditSettingTab = class extends import_obsidian.PluginSettingTab {
     new import_obsidian.Setting(containerEl).setName("Double-click to edit").setDesc("Double-click a note in Reading mode to enter edit mode.").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.doubleClickToEdit).onChange(async (value) => {
         this.plugin.settings.doubleClickToEdit = value;
+        await this.plugin.saveSettings();
+      })
+    );
+    new import_obsidian.Setting(containerEl).setName("Triple-click to Source mode").setDesc("Triple-click a note in Reading mode to enter Source mode directly.").addToggle(
+      (toggle) => toggle.setValue(this.plugin.settings.tripleClickToSource).onChange(async (value) => {
+        this.plugin.settings.tripleClickToSource = value;
         await this.plugin.saveSettings();
       })
     );
