@@ -1,4 +1,4 @@
-# QuickEdit
+# QuickEdit - Obsidian Plugin
 
 QuickEdit makes switching into edit mode feel more natural in Obsidian.
 
