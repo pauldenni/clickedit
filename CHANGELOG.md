@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to QuickEdit will be documented in this file.
+All notable changes to ClickEdit will be documented in this file.
 
 This project follows semantic versioning.
 

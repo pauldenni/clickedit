@@ -21,7 +21,7 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
 // main.ts
 var main_exports = {};
 __export(main_exports, {
-  default: () => QuickEditPlugin
+  default: () => ClickEditPlugin
 });
 module.exports = __toCommonJS(main_exports);
 var import_obsidian = require("obsidian");
@@ -33,14 +33,14 @@ var DEFAULT_SETTINGS = {
   ignoreCodeBlocks: true,
   ignoreInteractiveElements: true
 };
-var QuickEditPlugin = class extends import_obsidian.Plugin {
+var ClickEditPlugin = class extends import_obsidian.Plugin {
   constructor() {
     super(...arguments);
     __publicField(this, "settings", DEFAULT_SETTINGS);
   }
   async onload() {
     await this.loadSettings();
-    this.addSettingTab(new QuickEditSettingTab(this.app, this));
+    this.addSettingTab(new ClickEditSettingTab(this.app, this));
     this.addCommand({
       id: "enter-edit-mode",
       name: "Enter edit mode",
@@ -65,7 +65,7 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
     this.attachToMarkdownLeaves();
   }
   /**
-   * Attaches QuickEdit event handlers to Markdown leaves.
+   * Attaches ClickEdit event handlers to Markdown leaves.
    * Uses a dataset flag to prevent duplicate listeners on the same container.
    */
   attachToMarkdownLeaves() {
@@ -73,8 +73,8 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
       const view = leaf.view;
       if (!(view instanceof import_obsidian.MarkdownView)) return;
       const container = view.containerEl;
-      if (container.dataset.quickEditAttached === "true") return;
-      container.dataset.quickEditAttached = "true";
+      if (container.dataset.clickEditAttached === "true") return;
+      container.dataset.clickEditAttached = "true";
       let sequenceStartedInReadMode = false;
       this.registerDomEvent(container, "click", (event) => {
         if (event.detail === 1) {
@@ -133,7 +133,7 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
     return ((_a = viewState.state) == null ? void 0 : _a.mode) === "source";
   }
   /**
-   * Determines whether QuickEdit should ignore a double-click.
+   * Determines whether ClickEdit should ignore a double-click.
    *
    * Links and checkboxes are always protected because they already have
    * expected Obsidian behavior. Code blocks and other interactive elements
@@ -183,7 +183,7 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
   /**
    * Enters edit mode and attempts to place the cursor near the clicked content.
    *
-   * Instead of reusing mouse coordinates after the view changes, QuickEdit first
+   * Instead of reusing mouse coordinates after the view changes, ClickEdit first
    * captures a text anchor from Reading mode, then searches for that text in the
    * editor after switching modes. This is more reliable because rendered
    * Markdown and editor coordinates do not always map cleanly to each other.
@@ -293,7 +293,7 @@ var QuickEditPlugin = class extends import_obsidian.Plugin {
     await this.saveData(this.settings);
   }
 };
-var QuickEditSettingTab = class extends import_obsidian.PluginSettingTab {
+var ClickEditSettingTab = class extends import_obsidian.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     __publicField(this, "plugin");
@@ -302,7 +302,7 @@ var QuickEditSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "QuickEdit settings" });
+    containerEl.createEl("h2", { text: "ClickEdit settings" });
     new import_obsidian.Setting(containerEl).setName("Double-click to edit").setDesc("Double-click a note in Reading mode to enter edit mode.").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.doubleClickToEdit).onChange(async (value) => {
         this.plugin.settings.doubleClickToEdit = value;
@@ -321,7 +321,7 @@ var QuickEditSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("Edit mode").setDesc("Choose whether QuickEdit opens notes in Live Preview or Source mode.").addDropdown(
+    new import_obsidian.Setting(containerEl).setName("Edit mode").setDesc("Choose whether ClickEdit opens notes in Live Preview or Source mode.").addDropdown(
       (dropdown) => dropdown.addOption("live-preview", "Live Preview").addOption("source", "Source mode").setValue(this.plugin.settings.editMode).onChange(async (value) => {
         this.plugin.settings.editMode = value;
         await this.plugin.saveSettings();

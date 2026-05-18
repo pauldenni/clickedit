@@ -8,13 +8,13 @@ import {
 } from "obsidian";
 
 /**
- * QuickEdit Plugin
+ * ClickEdit Plugin
  *
  * Quickly enter edit mode by double-clicking in Reading mode,
  * switch to Source mode with a triple-click,
  * and return to Reading mode by pressing Escape.
  */
-interface QuickEditSettings {
+interface ClickEditSettings {
   doubleClickToEdit: boolean;
   tripleClickToSource: boolean;
   escapeToReading: boolean;
@@ -23,7 +23,7 @@ interface QuickEditSettings {
   ignoreInteractiveElements: boolean;
 }
 
-const DEFAULT_SETTINGS: QuickEditSettings = {
+const DEFAULT_SETTINGS: ClickEditSettings = {
   doubleClickToEdit: true,
   tripleClickToSource: false,
   escapeToReading: true,
@@ -32,13 +32,13 @@ const DEFAULT_SETTINGS: QuickEditSettings = {
   ignoreInteractiveElements: true,
 };
 
-export default class QuickEditPlugin extends Plugin {
-  settings: QuickEditSettings = DEFAULT_SETTINGS;
+export default class ClickEditPlugin extends Plugin {
+  settings: ClickEditSettings = DEFAULT_SETTINGS;
 
   async onload() {
     await this.loadSettings();
 
-    this.addSettingTab(new QuickEditSettingTab(this.app, this));
+    this.addSettingTab(new ClickEditSettingTab(this.app, this));
 
     this.addCommand({
       id: "enter-edit-mode",
@@ -70,7 +70,7 @@ export default class QuickEditPlugin extends Plugin {
   }
 
   /**
-   * Attaches QuickEdit event handlers to Markdown leaves.
+   * Attaches ClickEdit event handlers to Markdown leaves.
    * Uses a dataset flag to prevent duplicate listeners on the same container.
    */
   private attachToMarkdownLeaves() {
@@ -80,8 +80,8 @@ export default class QuickEditPlugin extends Plugin {
 
       const container = view.containerEl;
 
-      if (container.dataset.quickEditAttached === "true") return;
-      container.dataset.quickEditAttached = "true";
+      if (container.dataset.clickEditAttached === "true") return;
+      container.dataset.clickEditAttached = "true";
 
       let sequenceStartedInReadMode = false;
 
@@ -155,7 +155,7 @@ export default class QuickEditPlugin extends Plugin {
   }
 
   /**
-   * Determines whether QuickEdit should ignore a double-click.
+   * Determines whether ClickEdit should ignore a double-click.
    *
    * Links and checkboxes are always protected because they already have
    * expected Obsidian behavior. Code blocks and other interactive elements
@@ -237,7 +237,7 @@ export default class QuickEditPlugin extends Plugin {
   /**
    * Enters edit mode and attempts to place the cursor near the clicked content.
    *
-   * Instead of reusing mouse coordinates after the view changes, QuickEdit first
+   * Instead of reusing mouse coordinates after the view changes, ClickEdit first
    * captures a text anchor from Reading mode, then searches for that text in the
    * editor after switching modes. This is more reliable because rendered
    * Markdown and editor coordinates do not always map cleanly to each other.
@@ -392,10 +392,10 @@ export default class QuickEditPlugin extends Plugin {
   }
 }
 
-class QuickEditSettingTab extends PluginSettingTab {
-  plugin: QuickEditPlugin;
+class ClickEditSettingTab extends PluginSettingTab {
+  plugin: ClickEditPlugin;
 
-  constructor(app: App, plugin: QuickEditPlugin) {
+  constructor(app: App, plugin: ClickEditPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
@@ -404,7 +404,7 @@ class QuickEditSettingTab extends PluginSettingTab {
     const { containerEl } = this;
 
     containerEl.empty();
-    containerEl.createEl("h2", { text: "QuickEdit settings" });
+    containerEl.createEl("h2", { text: "ClickEdit settings" });
 
     new Setting(containerEl)
       .setName("Double-click to edit")
@@ -444,7 +444,7 @@ class QuickEditSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Edit mode")
-      .setDesc("Choose whether QuickEdit opens notes in Live Preview or Source mode.")
+      .setDesc("Choose whether ClickEdit opens notes in Live Preview or Source mode.")
       .addDropdown((dropdown) =>
         dropdown
           .addOption("live-preview", "Live Preview")
